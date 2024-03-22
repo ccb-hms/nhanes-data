@@ -19,7 +19,7 @@ system appropriately.
 install.packages(c("httpuv", "BiocManager"), repos = "https://cloud.r-project.org")
 BiocManager::install("BiocFileCache")
 BiocManager::install_github("cjendres1/nhanes")
-BiocManager::install_github("ccb-hms/httpcache")
+BiocManager::install_github("ccb-hms/cachehttp")
 ```
 
 
@@ -42,7 +42,8 @@ s <- start_cache(host = "0.0.0.0", port = 8080,
 
 It is best to keep an eye on the session to see if anything unexpected
 is happening, which it sometimes does. In that case, closing the
-session and restarting usually works.
+session and restarting usually works. One thing to look out for is
+that the temporary directory does not run out of space.
 
 The advantage of doing it this way is that files will not be
 downloaded from the CDC website more than once _unless_ it has been
@@ -78,6 +79,18 @@ for (x in mf$Table) {
             write.csv(d, file = rawcsv, row.names = FALSE)
     }
 }
+
+for (x in mf$Table) {
+    rawcsv <- sprintf("%s/%s.rds", FILEROOT, x)
+    if (!file.exists(rawcsv)) {
+        cat(x, " -> ", rawcsv, fill = TRUE)
+        d <- nhanes(x, translated = FALSE)
+        if (is.data.frame(d))
+            saveRDS(d, file = rawcsv, compress = "xz")
+    }
+}
+
+
 ```
 
 ## Download documentation files and extract codebooks
